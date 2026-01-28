@@ -19,6 +19,9 @@ sea-orm = { version = "2.0.0-rc", features = [
     "runtime-tokio-rustls",
     "macros",
 ] }
-entity ={ path = "entity"}
+entity = { path = "entity" }
 sha256 = "1.6.0"
 argon2 = "0.5"
+jsonwebtoken = { version = "9.3.0", features = ["use_pem"] }
+chrono = "0.4.43"
+actix-web-lab = "0.24.3"

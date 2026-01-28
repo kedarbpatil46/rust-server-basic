@@ -8,7 +8,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{api_response, app_state};
+use crate::utils::{api_response, app_state, jwt::{encode_jwt}};
 
 #[derive(Deserialize, Serialize)]
 struct RegisterModel {
@@ -83,5 +83,6 @@ pub async fn login(
         return api_response::ApiResponse::new(401, "Invalid password".to_string());
     }
 
-    api_response::ApiResponse::new(200, format!("User Logged in successfully"))
+    let token = encode_jwt(user.email, user.id.to_string());
+    api_response::ApiResponse::new(200, format!("{{ 'token' : '{:?}'}}", token))
 }
