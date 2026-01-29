@@ -10,11 +10,11 @@ lazy_static!{
 }
 
 fn set_address() -> String {
-    env::var("ADDRESS").unwrap()
+    env::var("ADDRESS").unwrap_or("127.0.0.1".to_string())
 }
 
 fn set_port() -> u16 {
-    env::var("PORT").unwrap().parse::<u16>().unwrap()
+    env::var("PORT").unwrap_or("5050".to_owned()).parse::<u16>().unwrap()
 }
 
 fn set_database() -> String {
