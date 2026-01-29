@@ -1,23 +1,33 @@
-use actix_web::{body::MessageBody, dev::{ServiceRequest, ServiceResponse}, http::{Error, header::AUTHORIZATION}, middleware::Next};
-use sea_orm::Iden;
+use actix_web::{
+    Error, HttpMessage, body::MessageBody, dev::{ServiceRequest, ServiceResponse}, error::{ErrorUnauthorized}, http::header::AUTHORIZATION, middleware::Next
+};
 
-use crate::utils::{api_response::{self, ApiResponse}, jwt::decode_jwt};
-
-
+use crate::utils::jwt::decode_jwt;
 
 pub async fn check_auth_middleware(
     req: ServiceRequest,
-    next: Next<impl MessageBody>
+    next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
-    let auth = req.headers().get(AUTHORIZATION);
 
-    if auth.is_none() {
-        return Err(Error::from(api_response::ApiResponse::new(401, "Unauthorized".to_string())));
-    }
+    // 1️⃣ Extract Authorization header
+    let auth_header = req
+        .headers()
+        .get(AUTHORIZATION)
+        .and_then(|h| h.to_str().ok())
+        .ok_or_else(|| ErrorUnauthorized("Missing Authorization header"))?;
 
-    let token = auth.unwrap().to_str().unwrap().to_owned();
+    // 2️⃣ Strip "Bearer "
+    let token = auth_header
+        .strip_prefix("Bearer ")
+        .ok_or_else(|| ErrorUnauthorized("Invalid Authorization format"))?;
 
-    let claim = decode_jwt(token).unwrap();
+    // 3️⃣ Decode JWT
+    let claims = decode_jwt(token.to_string())
+        .map_err(|_| ErrorUnauthorized("Invalid or expired token"))?;
 
-    next.call(req).await.map_err(|err| Error::from(ApiResponse::new(500, err.to_string())))
+    // 4️⃣ Attach claims to request extensions
+    req.extensions_mut().insert(claims);
+
+    // 5️⃣ Continue
+    next.call(req).await
 }
