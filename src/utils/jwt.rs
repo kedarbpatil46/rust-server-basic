@@ -1,20 +1,37 @@
+use std::future;
+
+use actix_web::{FromRequest, HttpMessage};
+use actix_web_lab::FromRequest;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
+use sea_orm::prelude::Uuid;
 use serde::{Deserialize, Serialize};
 
 use crate::utils;
 
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Claims {
     pub exp: usize,
     pub iat: usize,
     pub email: String,
-    pub id: String,
+    pub id: Uuid,
 }
 
-pub fn encode_jwt(email: String, id: String) -> Result<String, jsonwebtoken::errors::Error> {
+impl FromRequest for Claims {
+    type Error = actix_web::Error;
+    type Future = future::Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &actix_web::HttpRequest, payload: &mut actix_web::dev::Payload) -> std::future::Ready<Result<Claims, actix_web::Error>> {
+        match req.extensions().get::<Claims>() {
+            Some(claims) => future::ready(Ok(claims.clone())),
+            None => future::ready(Err(actix_web::error::ErrorBadRequest("Bad Claims")))
+        }
+    }
+}
+
+pub fn encode_jwt(email: String, id: Uuid) -> Result<String, jsonwebtoken::errors::Error> {
     let now = Utc::now();
     let exp = now + Duration::hours(24);
 

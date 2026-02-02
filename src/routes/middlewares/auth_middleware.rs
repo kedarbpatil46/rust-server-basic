@@ -9,25 +9,25 @@ pub async fn check_auth_middleware(
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
 
-    // 1️⃣ Extract Authorization header
+    // Extract Authorization header
     let auth_header = req
         .headers()
         .get(AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
         .ok_or_else(|| ErrorUnauthorized("Missing Authorization header"))?;
 
-    // 2️⃣ Strip "Bearer "
+    // Strip "Bearer "
     let token = auth_header
         .strip_prefix("Bearer ")
         .ok_or_else(|| ErrorUnauthorized("Invalid Authorization format"))?;
 
-    // 3️⃣ Decode JWT
-    let claims = decode_jwt(token.to_string())
+    // Decode JWT
+    let claim = decode_jwt(token.to_string())
         .map_err(|_| ErrorUnauthorized("Invalid or expired token"))?;
 
-    // 4️⃣ Attach claims to request extensions
-    req.extensions_mut().insert(claims);
+    // Attach claims to request extensions
+    req.extensions_mut().insert(claim.claims);
 
-    // 5️⃣ Continue
+    // Continue
     next.call(req).await
 }

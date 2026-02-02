@@ -83,6 +83,6 @@ pub async fn login(
         return api_response::ApiResponse::new(401, "Invalid password".to_string());
     }
 
-    let token = encode_jwt(user.email, user.id.to_string());
+    let token = encode_jwt(user.email, user.id);
     api_response::ApiResponse::new(200, format!("{{ 'token' : '{:?}'}}", token))
 }
